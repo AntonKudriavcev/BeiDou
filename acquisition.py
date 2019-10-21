@@ -6,7 +6,7 @@ from initialize import Result
 class AcquisitionResult(Result):
     def __init__(self, settings):
         self._settings = settings
-        self._results  = None
+        self._results = None
         self._channels = None
 
     @property
@@ -66,6 +66,7 @@ class AcquisitionResult(Result):
 
         # Number of the frequency bins for the given acquisition band (500Hz steps)
         numberOfFrqBins = np.int(np.round(settings.acqSearchBand * 2) + 1)
+        print(numberOfFrqBins)
 
         # Generate all C/A codes and sample them according to the sampling freq.
         caCodesTable = settings.makeCaTable()
@@ -142,7 +143,7 @@ class AcquisitionResult(Result):
             peakSize = results.max(0).max()
             codePhase = results.max(0).argmax()
 
-            samplesPerCodeChip = long(round(settings.samplingFreq / settings.codeFreqBasis))
+            samplesPerCodeChip = np.long(round(settings.samplingFreq / settings.codeFreqBasis))
 
             excludeRangeIndex1 = codePhase - samplesPerCodeChip
 
@@ -213,13 +214,13 @@ class AcquisitionResult(Result):
         mpl.rcdefaults()
         # mpl.rcParams['font.sans-serif']
         # mpl.rcParams['font.family'] = 'serif'
-        mpl.rc('savefig', bbox='tight', transparent=False, format='png')
-        mpl.rc('axes', grid=True, linewidth=1.5, axisbelow=True)
-        mpl.rc('lines', linewidth=1.5, solid_joinstyle='bevel')
-        mpl.rc('figure', figsize=[8, 6], autolayout=False, dpi=120)
-        mpl.rc('text', usetex=True)
-        mpl.rc('font', family='serif', serif='Computer Modern Roman', size=16)
-        mpl.rc('mathtext', fontset='cm')
+        mpl.rc('savefig',  bbox      = 'tight', transparent     = False, format    = 'png'          )
+        mpl.rc('axes',     grid      = True,    linewidth       = 1.5,   axisbelow = True           )
+        mpl.rc('lines',    linewidth = 1.5,     solid_joinstyle = 'bevel'                           )
+        mpl.rc('figure',   figsize   = [8, 6],  autolayout      = False, dpi = 120                  )
+        mpl.rc('text',     usetex    = True                                                         )
+        mpl.rc('font',     family    = 'serif', serif           = 'Computer Modern Roman', size = 16)
+        mpl.rc('mathtext', fontset   = 'cm'                                                         )
 
         # mpl.rc('font', size=16)
         # mpl.rc('text.latex', preamble=r'\usepackage{cmbright}')
@@ -275,7 +276,7 @@ class AcquisitionResult(Result):
 
         settings = self._settings
         # Initialize all channels ================================================
-        PRN = np.zeros(settings.numberOfChannels, dtype='int64')
+        PRN = np.zeros(settings.numberOfChannels, dtype = 'int64')
         acquiredFreq = np.zeros(settings.numberOfChannels)
         codePhase = np.zeros(settings.numberOfChannels)
         status = ['-' for _ in range(settings.numberOfChannels)]
@@ -315,7 +316,7 @@ class AcquisitionResult(Result):
         #                   at the processing of the signal (tracking part).
         #       settings    - receiver settings
 
-        channel = self._channels
+        channel  = self._channels
         settings = self._settings
         assert isinstance(channel, np.recarray)
         print ('\n*=========*=====*===============*===========*=============*========*')
@@ -334,6 +335,7 @@ class AcquisitionResult(Result):
                 print ('|      %2d | --- |  ------------ |   -----   |    ------   |   Off  |' % channelNr)
 
         print ('*=========*=====*===============*===========*=============*========*\n')
+
 
 if __name__ == '__main__':
     pass

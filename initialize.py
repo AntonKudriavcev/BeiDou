@@ -96,15 +96,15 @@ class Settings(object):
         # Raw signal file name and other parameter ===============================
         # This is a "default" name of the data file (signal record) to be used in
         # the post-processing mode
-        self.fileName = '/Users/yangsu/Downloads/GNSS_signal_records/BeiDouData-DiscreteComponents-fs38_192-if9_55.bin'
+        self.fileName = 'TEST1.DAT'
 
         # Data type used to store one sample
         self.dataType = 'int8'
 
         # Intermediate, sampling and code frequencies
-        self.IF = 9548000.0
+        self.IF = 1250000.0
 
-        self.samplingFreq = 38192000.0
+        self.samplingFreq = 5000000.0
 
         self.codeFreqBasis = 1023000.0
 
@@ -355,7 +355,6 @@ class Settings(object):
         if not isinstance(fileNameStr, str):
             raise TypeError('File name must be a string')
         settings = self
-        print(type(self))
         # Generate plot of raw data ==============================================
 
         try:
@@ -379,15 +378,18 @@ class Settings(object):
                 plt.clf()
                 timeScale = np.arange(0, 0.005, 1 / settings.samplingFreq)
 
-                plt.subplot(2, 2, 1)
-                plt.plot(1000 * timeScale[1:samplesPerCode / 50],
-                         data[1:samplesPerCode / 50])
+                print(timeScale)
+                print(samplesPerCode)
+
+                plt.subplot(2, 1, 1)
+                plt.plot(1000 * timeScale[1:int(samplesPerCode / 1)],
+                         data[1:int(samplesPerCode / 1)])
                 plt.axis('tight')
                 plt.grid()
                 plt.title('Time domain plot')
                 plt.xlabel('Time (ms)')
                 plt.ylabel('Amplitude')
-                plt.subplot(2, 2, 2)
+                plt.subplot(2, 1, 2)
                 f, Pxx = welch(data - np.mean(data),
                                settings.samplingFreq / 1000000.0,
                                hamming(16384, False),
@@ -400,8 +402,9 @@ class Settings(object):
                 plt.title('Frequency domain plot')
                 plt.xlabel('Frequency (MHz)')
                 plt.ylabel('Magnitude')
+                plt.subplots_adjust(wspace = 0, hspace = 0.5)
                 plt.show()
-                plt.subplot(2, 2, 3.5)
+                plt.subplot(1, 1, 1)
                 plt.hist(data, np.arange(- 128, 128))
                 dmax = np.max(np.abs(data)) + 1
 
@@ -413,6 +416,7 @@ class Settings(object):
                 plt.title('Histogram')
                 plt.xlabel('Bin')
                 plt.ylabel('Number in bin')
+                plt.show()
             # === Error while opening the data file ================================
         except IOError as e:
             print ('Unable to read file "%s": %s' % (fileNameStr, e))
@@ -455,8 +459,8 @@ class Settings(object):
     def postProcessing(self, fileNameStr=None):
         # Initialization =========================================================
         import acquisition
-        import postNavigation
-        import tracking
+        # import postNavigation
+        # import tracking
         print ('Starting processing...')
         settings = self
         if not fileNameStr:
@@ -484,7 +488,7 @@ class Settings(object):
                     print ('   Acquiring satellites...')
                     acqResults = acquisition.AcquisitionResult(settings)
                     acqResults.acquire(data)
-                    acqResults.plot()
+                    # acqResults.plot()
                 # Initialize channels and prepare for the run ============================
                 # Start further processing only if a GNSS signal was acquired (the
                 # field FREQUENCY will be set to 0 for all not acquired signals)
@@ -496,32 +500,32 @@ class Settings(object):
                     print ('No GNSS signals detected, signal processing finished.')
                     trackResults = None
 
-                # Track the signal =======================================================
-                startTime = datetime.datetime.now()
+                # # Track the signal =======================================================
+                # startTime = datetime.datetime.now()
 
-                print ('   Tracking started at %s' % startTime.strftime('%X'))
-                trackResults = tracking.TrackingResult(acqResults)
-                try:
-                    trackResults.results = np.load('trackingResults_python.npy')
-                except IOError:
-                    trackResults.track(fid)
-                    np.save('trackingResults_python', trackResults.results)
+                # print ('   Tracking started at %s' % startTime.strftime('%X'))
+                # trackResults = tracking.TrackingResult(acqResults)
+                # try:
+                #     trackResults.results = np.load('trackingResults_python.npy')
+                # except IOError:
+                #     trackResults.track(fid)
+                #     np.save('trackingResults_python', trackResults.results)
 
-                print ('   Tracking is over (elapsed time %s s)' % (datetime.datetime.now() - startTime).total_seconds())
-                # Auto save the acquisition & tracking results to save time.
-                print ('   Saving Acquisition & Tracking results to storage')
-                # Calculate navigation solutions =========================================
-                print ('   Calculating navigation solutions...')
-                navResults = postNavigation.NavigationResult(trackResults)
-                navResults.postNavigate()
+                # print ('   Tracking is over (elapsed time %s s)' % (datetime.datetime.now() - startTime).total_seconds())
+                # # Auto save the acquisition & tracking results to save time.
+                # print ('   Saving Acquisition & Tracking results to storage')
+                # # Calculate navigation solutions =========================================
+                # print ('   Calculating navigation solutions...')
+                # navResults = postNavigation.NavigationResult(trackResults)
+                # navResults.postNavigate()
 
-                print ('   Processing is complete for this data block')
-                # Plot all results ===================================================
-                print ('   Plotting results...')
-                # TODO turn off tracking plots for now
-                if not settings.plotTracking:
-                    trackResults.plot()
-                navResults.plot()
+                # print ('   Processing is complete for this data block')
+                # # Plot all results ===================================================
+                # print ('   Plotting results...')
+                # # TODO turn off tracking plots for now
+                # if not settings.plotTracking:
+                #     trackResults.plot()
+                # navResults.plot()
                 print ('Post processing of the signal is over.')
         except IOError as e:
             # Error while opening the data file.
