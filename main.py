@@ -12,23 +12,22 @@ import initialize
 # addpath('include')
 # addpath('geoFunctions')
 # Print startup ==========================================================
-print ('Welcome to:  softGNSS\n')
+print ('Welcome to:  Soft_GNSS\n')
 # Initialize settings class=========================================
 settings = initialize.Settings()
 
 # Generate plot of raw data and ask if ready to start processing =========
 try:
-    print ('Probing data "%s"...' % settings.fileName)
-    settings.probeData('TEST1.DAT')
+    print ('Probing data "%s"...' % settings.file_Name)
+    settings.probe_Data('TEST1.DAT')
 finally:
     pass
 
 print ('  Raw IF data plotted ')
-print (' (run setSettings or change settings in "initialize.py" to reconfigure)')
 print (' ')
-gnssStart = True
+gnss_Start = True
 # gnssStart = int(raw_input('Enter "1" to initiate GNSS processing or "0" to exit : ').strip())
 
-if gnssStart:
+if gnss_Start:
     print (' ')
-    settings.postProcessing()
+    settings.post_Processing()

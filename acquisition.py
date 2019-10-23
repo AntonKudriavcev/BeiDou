@@ -3,28 +3,28 @@ import numpy as np
 from initialize import Result
 
 
-class AcquisitionResult(Result):
+class Acquisition_Result(Result):
     def __init__(self, settings):
         self._settings = settings
         self._results = None
         self._channels = None
 
     @property
-    def peakMetric(self):
+    def peak_Metric(self):
         assert isinstance(self._results, np.recarray)
-        return self._results.peakMetric
+        return self._results.peak_Metric
 
     @property
-    def carrFreq(self):
+    def carr_Freq(self):
         assert isinstance(self._results, np.recarray)
-        return self._results.carrFreq
+        return self._results.carr_Freq
 
     @property
-    def codePhase(self):
+    def code_Phase(self):
         assert isinstance(self._results, np.recarray)
-        return self._results.codePhase
+        return self._results.code_Phase
 
-    def acquire(self, longSignal):
+    def acquire(self, long_Signal):
         # ./acquisition.m
         # Function performs cold start acquisition on the collected "data". It
         # searches for GPS signals of all satellites, which are listed in field
@@ -49,149 +49,149 @@ class AcquisitionResult(Result):
         settings = self._settings
 
         # Find number of samples per spreading code
-        samplesPerCode = settings.samplesPerCode
+        samples_Per_Code = settings.samples_Per_Code
 
         # Create two 1m sec vectors of data to correlate with and one with zero DC
-        signal1 = longSignal[0:samplesPerCode]
+        signal1 = long_Signal[0:samples_Per_Code]
 
-        signal2 = longSignal[samplesPerCode:2 * samplesPerCode]
+        signal2 = long_Signal[samples_Per_Code:2 * samples_Per_Code]
 
-        signal0DC = longSignal - longSignal.mean()
+        signal_0DC = long_Signal - long_Signal.mean()
 
         # Find sampling period
-        ts = 1.0 / settings.samplingFreq
+        ts = 1.0 / settings.sampling_Freq
 
         # Find phase points of the local carrier wave
-        phasePoints = np.arange(samplesPerCode) * 2 * np.pi * ts
+        phase_Points = np.arange(samples_Per_Code) * 2 * np.pi * ts
 
         # Number of the frequency bins for the given acquisition band (500Hz steps)
-        numberOfFrqBins = np.int(np.round(settings.acqSearchBand * 2) + 1)
-        print(numberOfFrqBins)
+        number_of_Frq_Bins = np.int(np.round(settings.acq_Search_Band * 2) + 1)
+        print(number_of_Frq_Bins)
 
         # Generate all C/A codes and sample them according to the sampling freq.
-        caCodesTable = settings.makeCaTable()
+        Ranging_Code_Table = settings.make_Ranging_Code_Table()
 
         # --- Initialize arrays to speed up the code -------------------------------
         # Search results of all frequency bins and code shifts (for one satellite)
-        results = np.zeros((numberOfFrqBins, samplesPerCode))
+        results = np.zeros((number_of_Frq_Bins, samples_Per_Code))
 
         # Carrier frequencies of the frequency bins
-        frqBins = np.zeros(numberOfFrqBins)
+        frq_Bins = np.zeros(number_of_Frq_Bins)
 
         # --- Initialize acqResults ------------------------------------------------
         # Carrier frequencies of detected signals
-        carrFreq = np.zeros(32)
+        carr_Freq = np.zeros(37)
 
         # C/A code phases of detected signals
-        codePhase_ = np.zeros(32)
+        code_Phase_ = np.zeros(37)
 
         # Correlation peak ratios of the detected signals
-        peakMetric = np.zeros(32)
+        peak_Metric = np.zeros(37)
 
         print ('(')
         # Perform search for all listed PRN numbers ...
-        for PRN in range(len(settings.acqSatelliteList)):
+        for PRN in range(len(settings.acq_Satellite_List)):
             # Correlate signals ======================================================
             # --- Perform DFT of C/A code ------------------------------------------
-            caCodeFreqDom = np.fft.fft(caCodesTable[PRN, :]).conj()
+            Ranging_Code_Freq_Dom = np.fft.fft(Ranging_Code_Table[PRN, :]).conj()
 
-            for frqBinIndex in range(numberOfFrqBins):
+            for frq_Bin_Index in range(number_of_Frq_Bins):
                 # --- Generate carrier wave frequency grid (0.5kHz step) -----------
-                frqBins[frqBinIndex] = settings.IF - \
-                                       settings.acqSearchBand / 2 * 1000 + \
-                                       500.0 * frqBinIndex
+                frq_Bins[frq_Bin_Index] = settings.IF - \
+                                       settings.acq_Search_Band / 2 * 1000 + \
+                                       500.0 * frq_Bin_Index
 
-                sinCarr = np.sin(frqBins[frqBinIndex] * phasePoints)
+                sin_Carr = np.sin(frq_Bins[frq_Bin_Index] * phase_Points)
 
-                cosCarr = np.cos(frqBins[frqBinIndex] * phasePoints)
+                cos_Carr = np.cos(frq_Bins[frq_Bin_Index] * phase_Points)
 
-                I1 = sinCarr * signal1
+                I1 = sin_Carr * signal1
 
-                Q1 = cosCarr * signal1
+                Q1 = cos_Carr * signal1
 
-                I2 = sinCarr * signal2
+                I2 = sin_Carr * signal2
 
-                Q2 = cosCarr * signal2
+                Q2 = cos_Carr * signal2
 
-                IQfreqDom1 = np.fft.fft(I1 + 1j * Q1)
+                IQ_freq_Dom1 = np.fft.fft(I1 + 1j * Q1)
 
-                IQfreqDom2 = np.fft.fft(I2 + 1j * Q2)
+                IQ_freq_Dom2 = np.fft.fft(I2 + 1j * Q2)
 
                 # domain)
-                convCodeIQ1 = IQfreqDom1 * caCodeFreqDom
+                conv_Code_IQ1 = IQ_freq_Dom1 * Ranging_Code_Freq_Dom
 
-                convCodeIQ2 = IQfreqDom2 * caCodeFreqDom
+                conv_Code_IQ2 = IQ_freq_Dom2 * Ranging_Code_Freq_Dom
 
-                acqRes1 = abs(np.fft.ifft(convCodeIQ1)) ** 2
+                acq_Res1 = abs(np.fft.ifft(conv_Code_IQ1)) ** 2
 
-                acqRes2 = abs(np.fft.ifft(convCodeIQ2)) ** 2
+                acq_Res2 = abs(np.fft.ifft(conv_Code_IQ2)) ** 2
 
                 # "blend" 1st and 2nd msec but will correct data bit issues
-                if acqRes1.max() > acqRes2.max():
-                    results[frqBinIndex, :] = acqRes1
+                if acq_Res1.max() > acq_Res2.max():
+                    results[frq_Bin_Index, :] = acq_Res1
 
                 else:
-                    results[frqBinIndex, :] = acqRes2
+                    results[frq_Bin_Index, :] = acq_Res2
 
             # Look for correlation peaks in the results ==============================
             # Find the highest peak and compare it to the second highest peak
             # The second peak is chosen not closer than 1 chip to the highest peak
             # --- Find the correlation peak and the carrier frequency --------------
-            peakSize = results.max(1).max()
-            frequencyBinIndex = results.max(1).argmax()
+            peak_Size = results.max(1).max()
+            frequency_Bin_Index = results.max(1).argmax()
 
-            peakSize = results.max(0).max()
-            codePhase = results.max(0).argmax()
+            peak_Size = results.max(0).max()
+            code_Phase = results.max(0).argmax()
 
-            samplesPerCodeChip = np.long(round(settings.samplingFreq / settings.codeFreqBasis))
+            samples_Per_Code_Chip = np.long(round(settings.sampling_Freq / settings.code_Freq_Basis))
 
-            excludeRangeIndex1 = codePhase - samplesPerCodeChip
+            exclude_Range_Index1 = code_Phase - samples_Per_Code_Chip
 
-            excludeRangeIndex2 = codePhase + samplesPerCodeChip
+            exclude_Range_Index2 = code_Phase + samples_Per_Code_Chip
 
             # boundaries
-            if excludeRangeIndex1 <= 0:
-                codePhaseRange = np.r_[excludeRangeIndex2:samplesPerCode + excludeRangeIndex1 + 1]
+            if exclude_Range_Index1 <= 0:
+                code_Phase_Range = np.r_[exclude_Range_Index2 : samples_Per_Code + exclude_Range_Index1 + 1]
 
-            elif excludeRangeIndex2 >= samplesPerCode - 1:
-                codePhaseRange = np.r_[excludeRangeIndex2 - samplesPerCode:excludeRangeIndex1]
+            elif exclude_Range_Index2 >= samples_Per_Code - 1:
+                code_Phase_Range = np.r_[exclude_Range_Index2 - samples_Per_Code : exclude_Range_Index1]
 
             else:
-                codePhaseRange = np.r_[0:excludeRangeIndex1 + 1, excludeRangeIndex2:samplesPerCode]
+                code_Phase_Range = np.r_[0 : exclude_Range_Index1 + 1, exclude_Range_Index2 : samples_Per_Code]
 
             # --- Find the second highest correlation peak in the same freq. bin ---
-            secondPeakSize = results[frequencyBinIndex, codePhaseRange].max()
+            second_Peak_Size = results[frequency_Bin_Index, code_Phase_Range].max()
 
-            peakMetric[PRN] = peakSize / secondPeakSize
+            peak_Metric[PRN] = peak_Size / second_Peak_Size
 
-            if (peakSize / secondPeakSize) > settings.acqThreshold:
+            if (peak_Size / second_Peak_Size) > settings.acq_Threshold:
                 # Fine resolution frequency search =======================================
                 # --- Indicate PRN number of the detected signal -------------------
                 print ('%02d ' % (PRN + 1))
-                caCode = settings.generateCAcode(PRN)
+                Ranging_Code = settings.generate_Ranging_Code(PRN)
 
-                codeValueIndex = np.floor(ts * np.arange(1, 10 * samplesPerCode + 1) / (1.0 / settings.codeFreqBasis))
+                code_Value_Index = np.floor(ts * np.arange(1, 10 * samples_Per_Code + 1) / (1.0 / settings.code_Freq_Basis))
 
-                longCaCode = caCode[np.longlong(codeValueIndex % 1023)]
+                long_Ranging_Code = Ranging_Code[np.longlong(code_Value_Index % 2046)]
 
                 # (Using detected C/A code phase)
-                xCarrier = signal0DC[codePhase:codePhase + 10 * samplesPerCode] * longCaCode
+                xCarrier = signal_0DC[code_Phase : code_Phase + 10 * samples_Per_Code] * long_Ranging_Code
 
-                fftNumPts = 8 * 2 ** (np.ceil(np.log2(len(xCarrier))))
+                fft_Num_Pts = 8 * 2 ** (np.ceil(np.log2(len(xCarrier))))
 
                 # associated carrier frequency
-                fftxc = np.abs(np.fft.fft(xCarrier, np.long(fftNumPts)))
+                fftxc = np.abs(np.fft.fft(xCarrier, np.long(fft_Num_Pts)))
 
-                uniqFftPts = np.long(np.ceil((fftNumPts + 1) / 2.0))
+                uniq_Fft_Pts = np.long(np.ceil((fft_Num_Pts + 1) / 2.0))
 
-                fftMax = fftxc[4:uniqFftPts - 5].max()
-                fftMaxIndex = fftxc[4:uniqFftPts - 5].argmax()
+                fft_Max = fftxc[4:uniq_Fft_Pts - 5].max()
+                fft_Max_Index = fftxc[4:uniq_Fft_Pts - 5].argmax()
 
-                fftFreqBins = np.arange(uniqFftPts) * settings.samplingFreq / fftNumPts
+                fft_Freq_Bins = np.arange(uniq_Fft_Pts) * settings.sampling_Freq / fft_Num_Pts
 
-                carrFreq[PRN] = fftFreqBins[fftMaxIndex]
+                carr_Freq[PRN] = fft_Freq_Bins[fft_Max_Index]
 
-                codePhase_[PRN] = codePhase
+                code_Phase_[PRN] = code_Phase
 
             else:
                 # --- No signal with this PRN --------------------------------------
@@ -199,9 +199,9 @@ class AcquisitionResult(Result):
 
         # === Acquisition is over ==================================================
         print (')\n')
-        acqResults = np.core.records.fromarrays([carrFreq, codePhase_, peakMetric],
-                                                names='carrFreq,codePhase,peakMetric')
-        self._results = acqResults
+        acq_Results = np.core.records.fromarrays([carr_Freq, code_Phase_, peak_Metric],
+                                                names='carr_Freq,code_Phase,peak_Metric')
+        self._results = acq_Results
         return
 
     def plot(self):
@@ -238,26 +238,26 @@ class AcquisitionResult(Result):
         # Plot all results =======================================================
         f, hAxes = plt.subplots()
 
-        plt.bar(range(1, 33), self.peakMetric)
+        plt.bar(range(1, 38), self.peak_Metric)
         plt.title('Acquisition results')
         plt.xlabel('PRN number (no bar - SV is not in the acquisition list)')
         plt.ylabel('Acquisition Metric ($1^{st}$ to $2^{nd}$ Correlation Peaks Ratio')
-        oldAxis = plt.axis()
+        old_Axis = plt.axis()
 
-        plt.axis([0, 33, 0, oldAxis[-1]])
-        plt.xticks(range(1, 33), size=12)
+        plt.axis([0, 38, 0, old_Axis[-1]])
+        plt.xticks(range(1, 38), size = 12)
         # plt.minorticks_on()
         hAxes.xaxis.grid()
         # Mark acquired signals ==================================================
 
-        acquiredSignals = self.peakMetric * (self.carrFreq > 0)
+        acquired_Signals = self.peak_Metric * (self.carr_Freq > 0)
 
-        plt.bar(range(1, 33), acquiredSignals, FaceColor=(0, 0.8, 0))
+        plt.bar(range(1, 38), acquired_Signals, FaceColor = (0, 0.8, 0))
         plt.legend(['Not acquired signals', 'Acquired signals'])
         plt.show()
 
     # preRun.m
-    def preRun(self):
+    def pre_Run(self):
         assert isinstance(self._results, np.recarray)
         # Function initializes tracking channels from acquisition data. The acquired
         # signals are sorted according to the signal strength. This function can be
@@ -276,37 +276,37 @@ class AcquisitionResult(Result):
 
         settings = self._settings
         # Initialize all channels ================================================
-        PRN = np.zeros(settings.numberOfChannels, dtype = 'int64')
-        acquiredFreq = np.zeros(settings.numberOfChannels)
-        codePhase = np.zeros(settings.numberOfChannels)
-        status = ['-' for _ in range(settings.numberOfChannels)]
+        PRN = np.zeros(settings.number_of_Channels, dtype = 'int64')
+        acquired_Freq = np.zeros(settings.number_of_Channels)
+        code_Phase = np.zeros(settings.number_of_Channels)
+        status = ['-' for _ in range(settings.number_of_Channels)]
 
         # --- Copy initial data to all channels ------------------------------------
 
         # Copy acquisition results ===============================================
 
         # --- Sort peaks to find strongest signals, keep the peak index information
-        PRNindexes = sorted(enumerate(self.peakMetric),
-                            key=lambda x: x[-1], reverse=True)
+        PRN_indexes = sorted(enumerate(self.peak_Metric),
+                            key = lambda x: x[-1], reverse = True)
 
         # --- Load information about each satellite --------------------------------
         # Maximum number of initialized channels is number of detected signals, but
         # not more as the number of channels specified in the settings.
-        for ii in range(min(settings.numberOfChannels, sum(self.carrFreq > 0))):
-            PRN[ii] = PRNindexes[ii][0] + 1
+        for ii in range(min(settings.number_of_Channels, sum(self.carr_Freq > 0))):
+            PRN[ii] = PRN_indexes[ii][0] + 1
 
-            acquiredFreq[ii] = self.carrFreq[PRNindexes[ii][0]]
+            acquired_Freq[ii] = self.carr_Freq[PRN_indexes[ii][0]]
 
-            codePhase[ii] = self.codePhase[PRNindexes[ii][0]]
+            code_Phase[ii] = self.code_Phase[PRN_indexes[ii][0]]
 
             status[ii] = 'T'
 
-        channel = np.core.records.fromarrays([PRN, acquiredFreq, codePhase, status],
-                                             names='PRN,acquiredFreq,codePhase,status')
+        channel = np.core.records.fromarrays([PRN, acquired_Freq, code_Phase, status],
+                                             names='PRN,acquired_Freq,code_Phase,status')
         self._channels = channel
         return
 
-    def showChannelStatus(self):
+    def show_Channel_Status(self):
         # Prints the status of all channels in a table.
 
         # showChannelStatus(channel, settings)
@@ -322,17 +322,17 @@ class AcquisitionResult(Result):
         print ('\n*=========*=====*===============*===========*=============*========*')
         print ('| Channel | PRN |   Frequency   |  Doppler  | Code Offset | Status |')
         print ('*=========*=====*===============*===========*=============*========*')
-        for channelNr in range(settings.numberOfChannels):
-            if channel[channelNr].status != '-':
+        for channel_Nr in range(settings.number_of_Channels):
+            if channel[channel_Nr].status != '-':
                 print ('|      %2d | %3d |  %2.5e |   %5.0f   |    %6d   |     %1s  |' % (
-                                    channelNr,
-                                    channel[channelNr].PRN,
-                                    channel[channelNr].acquiredFreq,
-                                    channel[channelNr].acquiredFreq - settings.IF,
-                                    channel[channelNr].codePhase,
-                                    channel[channelNr].status))
+                                    channel_Nr,
+                                    channel[channel_Nr].PRN,
+                                    channel[channel_Nr].acquired_Freq,
+                                    channel[channel_Nr].acquired_Freq - settings.IF,
+                                    channel[channel_Nr].code_Phase,
+                                    channel[channel_Nr].status))
             else:
-                print ('|      %2d | --- |  ------------ |   -----   |    ------   |   Off  |' % channelNr)
+                print ('|      %2d | --- |  ------------ |   -----   |    ------   |   Off  |' % channel_Nr)
 
         print ('*=========*=====*===============*===========*=============*========*\n')
 

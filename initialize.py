@@ -46,7 +46,7 @@ class Result(object):
         pass
 
 
-class TruePosition(object):
+class True_Position(object):
     def __init__(self):
         self._E = None
         self._N = None
@@ -82,78 +82,78 @@ class Settings(object):
         # Processing settings ====================================================
         # Number of milliseconds to be processed used 36000 + any transients (see
         # below - in Nav parameters) to ensure nav subframes are provided
-        self.msToProcess = 37000.0
+        self.ms_To_Process = 37000.0
 
         # Number of channels to be used for signal processing
-        self.numberOfChannels = 8
+        self.number_of_Channels = 8
 
         # Move the starting point of processing. Can be used to start the signal
         # processing at any point in the data record (e.g. for long records). fseek
         # function is used to move the file read point, therefore advance is byte
         # based only.
-        self.skipNumberOfBytes = 0
+        self.skip_Number_of_Bytes = 0
 
         # Raw signal file name and other parameter ===============================
         # This is a "default" name of the data file (signal record) to be used in
         # the post-processing mode
-        self.fileName = 'TEST1.DAT'
+        self.file_Name = 'TEST1.DAT'
 
         # Data type used to store one sample
-        self.dataType = 'int8'
+        self.data_Type = 'int8'
 
         # Intermediate, sampling and code frequencies
         self.IF = 1250000.0
 
-        self.samplingFreq = 5000000.0
+        self.sampling_Freq = 5000000.0
 
-        self.codeFreqBasis = 1023000.0
+        self.code_Freq_Basis = 1023000.0 * 2 ## BeiDou B1I
 
         # Define number of chips in a code period
-        self.codeLength = 1023
+        self.code_Length = 1023 * 2 ## BeiDou B1I
 
         # Acquisition settings ===================================================
         # Skips acquisition in the script postProcessing.m if set to 1
-        self.skipAcquisition = False
+        self.skip_Acquisition = False
 
         # List of satellites to look for. Some satellites can be excluded to speed
         # up acquisition
-        self.acqSatelliteList = range(1, 33)
+        self.acq_Satellite_List = range(1, 38) ## 37 BeiDou satellites
 
         # Band around IF to search for satellite signal. Depends on max Doppler
-        self.acqSearchBand = 14.0
+        self.acq_Search_Band = 14.0
 
         # Threshold for the signal presence decision rule
-        self.acqThreshold = 2.5
+        self.acq_Threshold = 2.5
 
         # Tracking loops settings ================================================
         # Code tracking loop parameters
-        self.dllDampingRatio = 0.7
+        self.dll_Damping_Ratio = 0.7
 
-        self.dllNoiseBandwidth = 2.0
+        self.dll_Noise_Bandwidth = 2.0
 
-        self.dllCorrelatorSpacing = 0.5
+        self.dll_Correlator_Spacing = 0.5
 
         # Carrier tracking loop parameters
-        self.pllDampingRatio = 0.7
+        self.pll_Damping_Ratio = 0.7
 
-        self.pllNoiseBandwidth = 25.0
+        self.pll_Noise_Bandwidth = 25.0
 
         # Navigation solution settings ===========================================
 
         # Period for calculating pseudoranges and position
-        self.navSolPeriod = 500.0
+        self.nav_Sol_Period = 500.0
 
         # Elevation mask to exclude signals from satellites at low elevation
-        self.elevationMask = 10.0
+        self.elevation_Mask = 10.0
 
         # Enable/dissable use of tropospheric correction
-        self.useTropCorr = True
+        self.use_Trop_Corr = True
 
         # 1 - On
 
         # True position of the antenna in UTM system (if known). Otherwise enter
         # all NaN's and mean position will be used as a reference .
-        self.truePosition = TruePosition()
+        self.true_Position = True_Position()
         #         self.truePosition.E = np.nan
 
         #         self.truePosition.N = np.nan
@@ -162,7 +162,7 @@ class Settings(object):
 
         # Plot settings ==========================================================
         # Enable/disable plotting of the tracking results for each channel
-        self.plotTracking = True
+        self.plot_Tracking = True
 
         # 1 - On
 
@@ -170,27 +170,22 @@ class Settings(object):
 
         self._c = 299792458.0
 
-        self._startOffset = 68.802
+        self._start_Offset = 68.802
 
     @property
     def c(self):
         return self._c
 
     @property
-    def startOffset(self):
-        return self._startOffset
+    def start_Offset(self):
+        return self._start_Offset
 
     @property
-    def samplesPerCode(self):
-        return np.long(np.round(self.samplingFreq / (self.codeFreqBasis / self.codeLength)))
+    def samples_Per_Code(self):
+        return np.long(np.round(self.sampling_Freq / (self.code_Freq_Basis / self.code_Length)))
 
     # makeCaTable.m
-    def makeCaTable(self):
-        # Function generates CA codes for all 32 satellites based on the settings
-        # provided in the structure "settings". The codes are digitized at the
-        # sampling frequency specified in the settings structure.
-        # One row in the "caCodesTable" is one C/A code. The row number is the PRN
-        # number of the C/A code.
+    def make_Ranging_Code_Table(self):
 
         # caCodesTable = makeCaTable(settings)
 
@@ -201,109 +196,97 @@ class Settings(object):
         #                       for all satellite PRN-s
 
         # --- Find number of samples per spreading code ----------------------------
-        samplesPerCode = self.samplesPerCode
+        samples_Per_Code = self.samples_Per_Code
 
         # --- Prepare the output matrix to speed up function -----------------------
-        caCodesTable = np.zeros((32, samplesPerCode))
+        Ranging_Code_Table = np.zeros((37, samples_Per_Code))
 
         # --- Find time constants --------------------------------------------------
-        ts = 1.0 / self.samplingFreq
+        ts = 1.0 / self.sampling_Freq
 
-        tc = 1.0 / self.codeFreqBasis
+        tc = 1.0 / self.code_Freq_Basis
 
         # === For all satellite PRN-s ...
-        for PRN in range(32):
-            # --- Generate CA code for given PRN -----------------------------------
-            caCode = self.generateCAcode(PRN)
+        for PRN in range(37):
+            # --- Generate Ranging code for given PRN -----------------------------------
+            Ranging_Code = self.generate_Ranging_Code(PRN)
 
-            # --- Make index array to read C/A code values -------------------------
-            # The length of the index array depends on the sampling frequency -
-            # number of samples per millisecond (because one C/A code period is one
-            # millisecond).
-            codeValueIndex = np.ceil(ts * np.arange(1, samplesPerCode + 1) / tc) - 1
-            codeValueIndex = np.longlong(codeValueIndex)
+            # --- Make index array to read Ranging code values -------------------------
 
-            codeValueIndex[-1] = 1022
+            code_Value_Index = np.ceil(ts * np.arange(1, samples_Per_Code + 1) / tc) - 1
+            code_Value_Index = np.longlong(code_Value_Index)
+
+            code_Value_Index[-1] = 2045  ## is equal to 2045
 
             # The "upsampled" code is made by selecting values form the CA code
             # chip array (caCode) for the time instances of each sample.
-            caCodesTable[PRN] = caCode[codeValueIndex]
-        return caCodesTable
+            Ranging_Code_Table[PRN] = Ranging_Code[code_Value_Index]
+        return Ranging_Code_Table
 
     # generateCAcode.m
-    def generateCAcode(self, prn):
-        # generateCAcode.m generates one of the 32 GPS satellite C/A codes.
+    def generate_Ranging_Code(self, prn):
 
-        # CAcode = generateCAcode(PRN)
+        assert prn in range(0, 37)
+    ## list for phase assignment of G2 sequence         
+        g2s = np.array([(1, 3), (1, 4), (1, 5), (1, 6), (1, 8), (1, 9), (1, 10), (1, 11), 
+                (2, 7), 
+                (3, 4),  (3, 5),  (3, 6),  (3, 8),  (3, 9),  (3, 10), (3, 11),
+                (4, 5),  (4, 6),  (4, 8),  (4, 9),  (4, 10), (4, 11), 
+                (5, 6),  (5, 8),  (5, 9),  (5, 10), (5, 11), 
+                (6, 8),  (6, 9),  (6, 10), (6, 11),
+                (8, 9),  (8, 10), (8, 11),
+                (9, 10), (9, 11),
+                (10, 11)])
 
-        #   Inputs:
-        #       PRN         - PRN number of the sequence.
-
-        #   Outputs:
-        #       CAcode      - a vector containing the desired C/A code sequence
-        #                   (chips).
-
-        # --- Make the code shift array. The shift depends on the PRN number -------
-        # The g2s vector holds the appropriate shift of the g2 code to generate
-        # the C/A code (ex. for SV#19 - use a G2 shift of g2s(19) = 471)
-
-        assert prn in range(0, 32)
-        g2s = [5, 6, 7, 8, 17, 18, 139, 140, 141, 251,
-               252, 254, 255, 256, 257, 258, 469, 470, 471, 472,
-               473, 474, 509, 512, 513, 514, 515, 516, 859, 860,
-               861, 862,
-               145, 175, 52, 21, 237, 235, 886, 657, 634, 762, 355, 1012, 176, 603, 130, 359, 595, 68, 386]
+        g2s = g2s - 1 ## reduction of phase coefficients to a convenient form
 
         # --- Pick right shift for the given PRN number ----------------------------
-        g2shift = g2s[prn]
+        g2_shift = g2s[prn]
 
         # --- Generate G1 code -----------------------------------------------------
 
         # --- Initialize g1 output to speed up the function ---
-        g1 = np.zeros(1023)
+        g1 = np.zeros(2046)
 
         # --- Load shift register ---
-        reg = -1 * np.ones(10)
+        reg = np.array([1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]) ## init g1 register as 01010101010
 
         # --- Generate all G1 signal chips based on the G1 feedback polynomial -----
-        for i in range(1023):
+        for i in range(2046):
             g1[i] = reg[-1]
 
-            saveBit = reg[2] * reg[9]
+            save_Bit = reg[0] * reg[6] * reg[7] * reg[8] * reg[9] * reg[10]
 
             reg[1:] = reg[:-1]
 
-            reg[0] = saveBit
+            reg[0] = save_Bit
 
         # --- Generate G2 code -----------------------------------------------------
 
         # --- Initialize g2 output to speed up the function ---
-        g2 = np.zeros(1023)
+        g2 = np.zeros(2046)
 
         # --- Load shift register ---
-        reg = -1 * np.ones(10)
+        reg = np.array([1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]) ## init g2 register as 01010101010
 
         # --- Generate all G2 signal chips based on the G2 feedback polynomial -----
-        for i in range(1023):
-            g2[i] = reg[-1]
+        for i in range(2046):
+            g2[i] = reg[g2_shift[0]] * reg[g2_shift[1]] ## XOR for different phase coefficients
 
-            saveBit = reg[1] * reg[2] * reg[5] * reg[7] * reg[8] * reg[9]
+            save_Bit = reg[0] * reg[1] * reg[2] * reg[3] * reg[4] * reg[7] * reg[8] * reg[10]
 
             reg[1:] = reg[:-1]
 
-            reg[0] = saveBit
+            reg[0] = save_Bit
 
-        # --- Shift G2 code --------------------------------------------------------
-        # The idea: g2 = concatenate[ g2_right_part, g2_left_part ];
-        g2 = np.r_[g2[1023 - g2shift:], g2[:1023 - g2shift]]
 
-        # --- Form single sample C/A code by multiplying G1 and G2 -----------------
-        CAcode = -g1 * g2
-        return CAcode
+        # --- Form single sample Ranging code by multiplying G1 and G2 -----------------
+        Ranging_Code = -g1 * g2
+        return Ranging_Code
 
     @staticmethod
     # calcLoopCoef.m
-    def calcLoopCoef(LBW, zeta, k):
+    def calc_Loop_Coef(LBW, zeta, k):
         # Function finds loop coefficients. The coefficients are used then in PLL-s
         # and DLL-s.
 
@@ -327,7 +310,7 @@ class Settings(object):
 
         return tau1, tau2
 
-    def probeData(self, fileNameStr=None):
+    def probe_Data(self, file_Name_Str = None):
 
         import matplotlib.pyplot as plt
         from scipy.signal import welch
@@ -350,25 +333,25 @@ class Settings(object):
         #                       here.
 
         # Check the number of arguments ==========================================
-        if fileNameStr is None:
-            fileNameStr = self.fileName
-        if not isinstance(fileNameStr, str):
+        if file_Name_Str is None:
+            file_Name_Str = self.file_Name
+        if not isinstance(file_Name_Str, str):
             raise TypeError('File name must be a string')
         settings = self
         # Generate plot of raw data ==============================================
 
         try:
-            with open(fileNameStr, 'rb') as fid:
+            with open(file_Name_Str, 'rb') as fid:
                 # Move the starting point of processing. Can be used to start the
                 # signal processing at any point in the data record (e.g. for long
                 # records).
-                fid.seek(settings.skipNumberOfBytes, 0)
-                samplesPerCode = settings.samplesPerCode
+                fid.seek(settings.skip_Number_of_Bytes, 0)
+                samples_Per_Code = settings.samples_Per_Code
 
                 try:
                     data = np.fromfile(fid,
-                                       settings.dataType,
-                                       10 * samplesPerCode)
+                                       settings.data_Type,
+                                       10 * samples_Per_Code)
 
                 except IOError:
                     # The file is too short
@@ -376,14 +359,11 @@ class Settings(object):
                 # --- Initialization ---------------------------------------------------
                 plt.figure(100)
                 plt.clf()
-                timeScale = np.arange(0, 0.005, 1 / settings.samplingFreq)
-
-                print(timeScale)
-                print(samplesPerCode)
+                time_Scale = np.arange(0, 0.005, 1 / settings.sampling_Freq)
 
                 plt.subplot(2, 1, 1)
-                plt.plot(1000 * timeScale[1:int(samplesPerCode / 1)],
-                         data[1:int(samplesPerCode / 1)])
+                plt.plot(1000 * time_Scale[1:int(samples_Per_Code / 1)],
+                         data[1:int(samples_Per_Code / 1)])
                 plt.axis('tight')
                 plt.grid()
                 plt.title('Time domain plot')
@@ -391,7 +371,7 @@ class Settings(object):
                 plt.ylabel('Amplitude')
                 plt.subplot(2, 1, 2)
                 f, Pxx = welch(data - np.mean(data),
-                               settings.samplingFreq / 1000000.0,
+                               settings.sampling_Freq / 1000000.0,
                                hamming(16384, False),
                                16384,
                                1024,
@@ -419,7 +399,7 @@ class Settings(object):
                 plt.show()
             # === Error while opening the data file ================================
         except IOError as e:
-            print ('Unable to read file "%s": %s' % (fileNameStr, e))
+            print ('Unable to read file "%s": %s' % (file_Name_Str, e))
 
     # ./postProcessing.m
 
@@ -456,49 +436,49 @@ class Settings(object):
 
     # 5) Plot the results.
 
-    def postProcessing(self, fileNameStr=None):
+    def post_Processing(self, file_Name_Str = None):
         # Initialization =========================================================
         import acquisition
         # import postNavigation
         # import tracking
         print ('Starting processing...')
         settings = self
-        if not fileNameStr:
-            fileNameStr = settings.fileName
-        if not isinstance(fileNameStr, str):
+        if not file_Name_Str:
+            file_Name_Str = settings.file_Name
+        if not isinstance(file_Name_Str, str):
             raise TypeError('File name must be a string')
         try:
-            with open(fileNameStr, 'rb') as fid:
+            with open(file_Name_Str, 'rb') as fid:
 
                 # If success, then process the data
                 # Move the starting point of processing. Can be used to start the
                 # signal processing at any point in the data record (e.g. good for long
                 # records or for signal processing in blocks).
-                fid.seek(settings.skipNumberOfBytes, 0)
+                fid.seek(settings.skip_Number_of_Bytes, 0)
                 # Acquisition ============================================================
                 # Do acquisition if it is not disabled in settings or if the variable
                 # acqResults does not exist.
-                if not settings.skipAcquisition:  # or 'acqResults' not in globals():
+                if not settings.skip_Acquisition:  # or 'acqResults' not in globals():
                     # Find number of samples per spreading code
-                    samplesPerCode = settings.samplesPerCode
+                    samples_Per_Code = settings.samples_Per_Code
 
                     # frequency estimation
-                    data = np.fromfile(fid, settings.dataType, 11 * samplesPerCode)
+                    data = np.fromfile(fid, settings.data_Type, 11 * samples_Per_Code)
 
                     print ('   Acquiring satellites...')
-                    acqResults = acquisition.AcquisitionResult(settings)
-                    acqResults.acquire(data)
+                    acq_Results = acquisition.Acquisition_Result(settings)
+                    acq_Results.acquire(data)
                     # acqResults.plot()
                 # Initialize channels and prepare for the run ============================
                 # Start further processing only if a GNSS signal was acquired (the
                 # field FREQUENCY will be set to 0 for all not acquired signals)
-                if np.any(acqResults.carrFreq):
-                    acqResults.preRun()
-                    acqResults.showChannelStatus()
+                if np.any(acq_Results.carr_Freq):
+                    acq_Results.preRun()
+                    acq_Results.show_Channel_Status()
                 else:
                     # No satellites to track, exit
                     print ('No GNSS signals detected, signal processing finished.')
-                    trackResults = None
+                    track_Results = None
 
                 # # Track the signal =======================================================
                 # startTime = datetime.datetime.now()
@@ -529,4 +509,4 @@ class Settings(object):
                 print ('Post processing of the signal is over.')
         except IOError as e:
             # Error while opening the data file.
-            print ('Unable to read file "%s": %s.' % (settings.fileName, e))
+            print ('Unable to read file "%s": %s.' % (settings.file_Name, e))
