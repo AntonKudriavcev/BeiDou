@@ -19,7 +19,7 @@ settings = initialize.Settings()
 # Generate plot of raw data and ask if ready to start processing =========
 try:
     print ('Probing data "%s"...' % settings.file_Name)
-    settings.probe_Data('TEST1.DAT')
+    settings.probe_Data('D://study//5_year//Course_project//SoftGNSS_python//data.dat')
 finally:
     pass
 
